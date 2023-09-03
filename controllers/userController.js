@@ -1,4 +1,5 @@
 const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const models = require("../models/index");
 exports.index = async (req, res, next) => {
   // const users = await models.User.findAll() // select * form User
@@ -24,7 +25,6 @@ exports.index = async (req, res, next) => {
     data: users,
   });
 };
-
 exports.userbyid = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -158,5 +158,49 @@ exports.destroy = async (req, res, next) => {
       message: error.message,
       data: [],
     });
+  }
+};
+//Authen
+exports.login = async (req, res, next) => {
+  try {
+    if (req.body.password && req.body.email) {
+      let user = await models.User.findOne({
+        where: { email: req.body.email },
+      });
+
+      if (!user) {
+        return res
+          .status(400)
+          .send({ message: "User does not exist", success: false });
+      }
+      const isMatch = await bcryptjs.compare(req.body.password, user.password);
+      if (!isMatch) {
+        return res
+          .status(401)
+          .send({ message: "Password is incorrect", success: false });
+      } else {
+        const JWT_SECRET = "your-know-my-secret-key@12345";
+        const token = jwt.sign(
+          { id: user.id, username: user.name },
+          JWT_SECRET,
+          {
+            expiresIn: "1d",
+          }
+        );
+        res.status(200).send({
+          message: "Login Successful",
+          success: true,
+          access_token: token,
+          data: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          },
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send(error);
   }
 };

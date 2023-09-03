@@ -9,4 +9,7 @@ router.post("/", usersController.insert);
 router.put("/:id", usersController.update);
 router.delete("/:id", usersController.destroy);
 
+// authen
+router.post("/login", usersController.login);
+
 module.exports = router;
